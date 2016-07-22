@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="jar" name="Clean and rebuild the Redis NIO connector">
+	<property environment="env" />
+	<property name="version" value="0.0.1"></property>
+
+    <path id="project.class.path">
+	    <pathelement location="bin/main" />
+	    <pathelement location="lib/slf4j-api-1.7.21.jar" />
+	    <pathelement location="lib/jedis-2.7.2.jar" />
+	    <pathelement location="lib/commons-pool2-2.4.2.jar" />
+    </path>
+
+    <target name="compile" depends="clean">
+        <mkdir dir="jar" />
+        <mkdir dir="bin" />
+        <mkdir dir="bin/main" />
+        <mkdir dir="bin/test" />
+
+        <javac debug="true" deprecation="true" destdir="bin/main" srcdir="src/main">
+            <classpath refid="project.class.path"/>
+	    </javac>
+        <javac debug="true" deprecation="true" destdir="bin/test" srcdir="src/test">
+    	    <classpath>
+    	    	<pathelement path="bin/main"/>
+    	    	<pathelement path="bin/test"/>
+    	    	<path refid="project.class.path"/>
+    	        <fileset dir="lib/test">
+    	          <include name="**/*.jar"/>
+    	        </fileset>
+    	    </classpath>
+	    </javac>
+    </target>
+    
+	<target name="jar" depends="clean, compile">
+        <tstamp>
+            <format property="TODAY" pattern="MM/dd/yyyy HH:mm:ss"/>
+        </tstamp>
+        <jar compress="true" destfile="jar/aa_redisnio_${version}.jar" index="false">
+            <manifest>
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Version" value="${version}"/>
+				<attribute name="Built-Date" value="${TODAY}"/>
+            </manifest>
+            <fileset dir="bin/main">
+                <include name="**/*.class" />
+            </fileset>
+        </jar>
+    </target>
+
+	<target name="test" depends="clean, compile">
+	  <junit fork="yes" haltonfailure="true" printsummary="on">
+	    <batchtest fork="yes">
+	      <fileset dir="src/test">
+	         <include name="**/*Test.java" />
+	         <include name="**/Test*.java" />
+	      </fileset>
+	    </batchtest>
+	  	<!--formatter type="xml" usefile="yes" /-->
+	  	<formatter type="plain" usefile="no" />
+	    <classpath>
+	    	<pathelement path="bin/main"/>
+	    	<pathelement path="bin/test"/>
+	    	<path refid="project.class.path"/>
+	        <fileset dir="lib/test">
+	          <include name="**/*.jar"/>
+	        </fileset>
+	    </classpath>
+	  	<assertions>
+	  	  <enable/>
+	  	</assertions>
+	  	<jvmarg value="-Dlog4j.configurationFile=info_log4jconfig.xml"/>
+	  </junit>
+	</target>
+	
+	
+    <target name="clean" description="Clean all build products.">
+        <delete dir="bin" />
+        <delete dir="jar" />
+    </target>
+
+</project>
