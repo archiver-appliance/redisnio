@@ -25,10 +25,17 @@ import org.slf4j.LoggerFactory;
  */
 public class RedisPath implements Path {
 	private static final Logger logger = LoggerFactory.getLogger(RedisPath.class);
+	
 	/**
-	 * The redisFileSystem should contain the jedis connection to the redis server
+	 * The file system provider for redis.
 	 */
-	private RedisFileSystem fs;
+	private RedisFileSystemProvider redisFSProvider;
+
+	/**
+	 * This is the connection name; a string used to identify the Jedis object being used in the FileSystemProvider's list of FileSystem's.
+	 */
+	private String connectionName;
+	
 	/**
 	 * This is the redis key; so by the time we initialize the path, we should have stripped the scheme and server
 	 */
@@ -37,20 +44,21 @@ public class RedisPath implements Path {
 	private String redisKey;
 	
 	/**
-	 * @param fs - This is the redis files system that maintains the connection to the server containing the data.
+	 * @param connectionName - This is the string used to identify the redis connection for connecting to this path. 
 	 * @param pathSuffix - This is the key (pathName). 
 	 * This gets appended to the path portion of the URI that was used to create the file system.
 	 * 
 	 */
-	public RedisPath(RedisFileSystem fs, String pathSuffix) { 
-		this.fs = fs;
-		this.redisKey = fs.getPathPrefix() + pathSuffix;
+	public RedisPath(RedisFileSystemProvider redisFSProvider, String connectionName, String pathSuffix) {
+		this.redisFSProvider = redisFSProvider;
+		this.connectionName = connectionName;
+		this.redisKey = pathSuffix;
 		this.key = Paths.get(this.redisKey);
 	}
 
 	@Override
 	public FileSystem getFileSystem() {
-		return fs;
+		return redisFSProvider.getFileSystem(connectionName);
 	}
 
 	@Override
@@ -60,7 +68,7 @@ public class RedisPath implements Path {
 
 	@Override
 	public Path getRoot() {
-		return new RedisPath(fs, "/");
+		return new RedisPath(redisFSProvider, connectionName, "/");
 	}
 
 	@Override
@@ -81,7 +89,7 @@ public class RedisPath implements Path {
 	@Override
 	public URI toUri() {
 		try {
-			return new URI(this.fs.toString() + this.key.toString());
+			return new URI("redis://" + this.connectionName + "/" + this.key.toString());
 		} catch (URISyntaxException e) {
 			logger.error("Exception generating URI", e);
 			return null;

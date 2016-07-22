@@ -41,13 +41,14 @@
 				<attribute name="Version" value="${version}"/>
 				<attribute name="Built-Date" value="${TODAY}"/>
             </manifest>
+        	<service type="java.nio.file.spi.FileSystemProvider" provider="edu.stanford.slac.archiverappliance.PlainPB.fs.redis.RedisFileSystemProvider"></service>
             <fileset dir="bin/main">
                 <include name="**/*.class" />
             </fileset>
         </jar>
     </target>
 
-	<target name="test" depends="clean, compile">
+	<target name="test" depends="jar">
 	  <junit fork="yes" haltonfailure="true" printsummary="on">
 	    <batchtest fork="yes">
 	      <fileset dir="src/test">
@@ -58,6 +59,7 @@
 	  	<!--formatter type="xml" usefile="yes" /-->
 	  	<formatter type="plain" usefile="no" />
 	    <classpath>
+	    	<pathelement path="jar/aa_redisnio_${version}.jar"/>
 	    	<pathelement path="bin/main"/>
 	    	<pathelement path="bin/test"/>
 	    	<path refid="project.class.path"/>

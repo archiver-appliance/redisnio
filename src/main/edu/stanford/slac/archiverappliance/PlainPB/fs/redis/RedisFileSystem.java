@@ -27,14 +27,12 @@ public class RedisFileSystem extends FileSystem {
 	private static final Logger logger = LoggerFactory.getLogger(RedisFileSystem.class);
 	private RedisFileSystemProvider theProvider;
 	JedisPool jedisPool = null;
-	private String pathPrefix;
 	private String connectionName;
 	
-	public RedisFileSystem(RedisFileSystemProvider theProvider, String server, int port, String pathPrefix, Map<String, ?> env) {
+	public RedisFileSystem(RedisFileSystemProvider theProvider, String server, int port, Map<String, ?> env) {
 		this.theProvider = theProvider;
 		this.connectionName = server + ":" + port;
 		this.jedisPool = new JedisPool(server, port);
-		this.pathPrefix = pathPrefix;
 	}
 
 	@Override
@@ -66,7 +64,7 @@ public class RedisFileSystem extends FileSystem {
 	
 	@Override
 	public Path getPath(String first, String... more) {
-		return new RedisPath(this, first + String.join("/", more));
+		return new RedisPath(theProvider, this.connectionName, first + String.join("/", more));
 	}
 
 	@Override
@@ -99,16 +97,7 @@ public class RedisFileSystem extends FileSystem {
 		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * This is the path portion of the URL that was used to create this fileSystem.
-	 * This could be null.
-	 * @return
-	 */
-	public String getPathPrefix() {
-		return pathPrefix;
-	}
-	
 	public String toString() { 
-		return "redis://" + this.connectionName + "/" + this.getPathPrefix();
+		return "redis://" + this.connectionName;
 	}
 }

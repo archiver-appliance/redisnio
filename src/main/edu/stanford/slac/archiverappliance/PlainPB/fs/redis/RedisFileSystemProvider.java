@@ -57,12 +57,19 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 		String server = uri.getHost();
 		int port = uri.getPort();
 		String connectionName = server + ":" + port;
+		RedisFileSystem fs = createFileSystem(connectionName, server, port, env);
+		return fs;
+	}
+
+	private RedisFileSystem createFileSystem(String connectionName, String server, int port, Map<String, ?> env) {
+		System.out.println("Creating a connection to the redis server at " + server + " with port " + port);
 		if(createdFileSystems.containsKey(connectionName)) { 
 			throw new FileSystemAlreadyExistsException("A redis file system that connects to " + connectionName + " was already created");
 		}
 		logger.debug("Creating a new redis file system connecting to " + connectionName);
-		RedisFileSystem fs = new RedisFileSystem(this, server, port, uri.getPath(), env);
+		RedisFileSystem fs = new RedisFileSystem(this, server, port, env);
 		createdFileSystems.put(connectionName, fs);
+		System.out.println("********************************************");
 		return fs;
 	}
 
@@ -77,14 +84,24 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 		}
 		return fs;
 	}
+	
+	public RedisFileSystem getFileSystem(String connectionName) { 
+		RedisFileSystem fs = createdFileSystems.get(connectionName);
+		String[] parts = connectionName.split(":");
+		String server = parts[0];
+		int port = Integer.parseInt(parts[1]);
+		if(fs == null) { 
+			fs = createFileSystem(connectionName, server, port, null);
+		}
+		return fs;
+	}
 
 	@Override
 	public Path getPath(URI uri) {
 		String server = uri.getHost();
 		int port = uri.getPort();
 		String connectionName = server + ":" + port;
-		RedisFileSystem fs = createdFileSystems.get(connectionName);
-		return fs.getPath(uri.getPath());
+		return new RedisPath(this, connectionName, uri.getPath());
 	}
 
 	@Override
