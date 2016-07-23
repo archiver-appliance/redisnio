@@ -182,7 +182,15 @@ public class RedisPath implements Path {
 
 	@Override
 	public int compareTo(Path other) {
-		return key.compareTo(other);
+		if(other == null) { 
+			return 1;
+		}
+		
+		if(other instanceof RedisPath) {
+			return key.compareTo(((RedisPath)other).key);			
+		} else { 
+			return 1;
+		}
 	}
 
 	@Override

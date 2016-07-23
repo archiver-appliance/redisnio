@@ -1,6 +1,8 @@
 package edu.stanford.slac.archiverappliance.PlainPB.fs.redis;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -8,8 +10,10 @@ import java.nio.file.PathMatcher;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,5 +110,42 @@ public class RedisFileSystem extends FileSystem {
 		try(Jedis jedis = this.jedisPool.getResource()) {
 			jedis.del(redisPath.getRedisKey().getBytes());
 		}		
+	}
+
+	public DirectoryStream<Path> getMatchingKeys(String redisKey, Filter<? super Path> filter) {
+		try(Jedis jedis = this.jedisPool.getResource()) {
+			Set<Path> matchingPaths = new TreeSet<Path>();
+			for(String matchingKey :jedis.keys(redisKey + "/*")) { 
+				RedisPath mathingRedisPath = new RedisPath(this.theProvider, this.connectionName, matchingKey);
+				if(filter != null) {
+					try { 
+						if(filter.accept(mathingRedisPath)) { 
+							matchingPaths.add(mathingRedisPath);
+						}
+					} catch(IOException ex) { 
+						logger.error("Exception from filter when matching " + matchingKey);
+					}
+				} else { 
+					matchingPaths.add(mathingRedisPath);
+				}
+			}
+			return new RedisPathDirectoryStream(matchingPaths);
+		}
+	}
+	
+	private final class RedisPathDirectoryStream implements DirectoryStream<Path> {
+		private Set<Path> paths;
+		RedisPathDirectoryStream(Set<Path> paths) { 
+			this.paths = paths;
+		}
+		
+		@Override
+		public void close() throws IOException {
+		}
+
+		@Override
+		public Iterator<Path> iterator() {
+			return paths.iterator();
+		}
 	}
 }

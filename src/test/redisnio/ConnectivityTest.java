@@ -5,12 +5,15 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.junit.After;
 import org.junit.Before;
@@ -41,18 +44,49 @@ public class ConnectivityTest {
 	}
 
 	@Test
-	public void testConnections() throws IOException, URISyntaxException {
+	public void testReadWrite() throws IOException, URISyntaxException {
 		assertTrue("Please define the environemnt variable ARCHAPPL_PERSISTENCE_LAYER_REDISURL", redisUrl != null);
 		assertTrue("ARCHAPPL_PERSISTENCE_LAYER_REDISURL should start with redis://", redisUrl.startsWith("redis://"));
 		assertTrue("ARCHAPPL_PERSISTENCE_LAYER_REDISURL should end with /", redisUrl.endsWith("/"));
-		Path p = Paths.get(new URI(redisUrl + "music/cc"));
-		Files.deleteIfExists(p);
-		List<String> srcLines = Arrays.asList(new String[] {"Time won't give me time", "Church of the poisoned mind", "Culture club"});
-		Files.write(p, srcLines);
-		assertTrue("Count not get a connection to the redis server at " + redisUrl, p != null);
-		List<String> allLines = Files.readAllLines(p);
-		assertTrue("We should have some data in the root contect", allLines.size() > 0);
-		assertTrue("We did not get back what we wrote", allLines.equals(srcLines));
+		
+		Set<Path> keysInData = new TreeSet<Path>();
+		for(TestData t : testData) { 
+			Files.deleteIfExists(Paths.get(new URI(redisUrl + t.key)));
+			keysInData.add(Paths.get(new URI(redisUrl + t.key)));
+		}
+
+		
+		for(TestData t : testData) {
+			Files.write(Paths.get(new URI(redisUrl + t.key)), t.content);
+			List<String> allLines = Files.readAllLines(Paths.get(new URI(redisUrl + t.key)));
+			assertTrue("We should have some data at the key " + t.key, allLines.size() > 0);
+			assertTrue("We did not get back what we wrote", allLines.equals(t.content));
+		}
+		
+		Set<Path> keysFromDStream = new TreeSet<Path>();
+		try(DirectoryStream<Path> ds = Files.newDirectoryStream(Paths.get(new URI(redisUrl + "music")))) {
+			for(Path p : ds) { 
+				keysFromDStream.add(p);
+			}
+		}
+		
+		assertTrue("Directory streams did not match", keysFromDStream.equals(keysInData));
+				
+		for(TestData t : testData) { 
+			Files.delete(Paths.get(new URI(redisUrl + t.key)));
+		}
 	}
 
+	private final class TestData {
+		String key;
+		List<String> content;
+		TestData(String key, String[] content) { 
+			this.key = key;
+			this.content = Arrays.asList(content);
+		}
+	}
+	TestData[] testData = new TestData[] {
+		new TestData("music/pink_floyd/wish_you_were_here", new String[] {"Shine on you crazy diamond", "Welcome to the machine", "Have a cigar", "Wish you were here"}),
+		new TestData("music/pink_floyd/dark_side_of_the_moon", new String[] {"Speak to Me", "Breathe", "On the Run", "Time", "The Great Gig in the Sky"})
+	};
 }
