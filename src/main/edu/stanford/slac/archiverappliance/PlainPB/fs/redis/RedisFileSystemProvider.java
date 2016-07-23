@@ -62,14 +62,12 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 	}
 
 	private RedisFileSystem createFileSystem(String connectionName, String server, int port, Map<String, ?> env) {
-		System.out.println("Creating a connection to the redis server at " + server + " with port " + port);
 		if(createdFileSystems.containsKey(connectionName)) { 
 			throw new FileSystemAlreadyExistsException("A redis file system that connects to " + connectionName + " was already created");
 		}
 		logger.debug("Creating a new redis file system connecting to " + connectionName);
 		RedisFileSystem fs = new RedisFileSystem(this, server, port, env);
 		createdFileSystems.put(connectionName, fs);
-		System.out.println("********************************************");
 		return fs;
 	}
 
@@ -106,7 +104,9 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-		throw new UnsupportedOperationException();
+		RedisPath redisPath = (RedisPath) path;
+		RedisFileSystem fs = createdFileSystems.get(redisPath.getConnectionName());
+		return new RedisSeekableByteChannel(fs, redisPath);
 	}
 
 	@Override
@@ -121,7 +121,9 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public void delete(Path path) throws IOException {
-		throw new UnsupportedOperationException();
+		RedisPath redisPath = (RedisPath) path;
+		RedisFileSystem fs = createdFileSystems.get(redisPath.getConnectionName());
+		fs.deleteKey(redisPath);
 	}
 
 	@Override

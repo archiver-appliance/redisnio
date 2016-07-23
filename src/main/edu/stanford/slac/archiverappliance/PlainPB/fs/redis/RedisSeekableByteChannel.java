@@ -36,6 +36,9 @@ public class RedisSeekableByteChannel implements SeekableByteChannel {
 	public int read(ByteBuffer dst) throws IOException {
 		try(Jedis jedis = this.fs.jedisPool.getResource()) { 
 			byte[] redisData = jedis.getrange(this.path.getRedisKey().getBytes(), this.currentPosition, dst.limit());
+			if(redisData.length <= 0) { 
+				return -1;
+			}
 			dst.put(redisData);
 			currentPosition = currentPosition + redisData.length;
 			return redisData.length;
@@ -44,32 +47,36 @@ public class RedisSeekableByteChannel implements SeekableByteChannel {
 
 	@Override
 	public int write(ByteBuffer src) throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+		try(Jedis jedis = this.fs.jedisPool.getResource()) {
+			long previousCurrent = currentPosition;
+			byte[] buf = new byte[src.remaining()];
+			src.get(buf);
+			currentPosition = jedis.setrange(this.path.getRedisKey().getBytes(), this.currentPosition, buf);
+			return (int) (currentPosition - previousCurrent);
+		}	
 	}
 
 	@Override
 	public long position() throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+		return currentPosition;
 	}
 
 	@Override
 	public SeekableByteChannel position(long newPosition) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		this.currentPosition = newPosition;
+		return this;
 	}
 
 	@Override
 	public long size() throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+		try(Jedis jedis = this.fs.jedisPool.getResource()) {
+			return jedis.strlen(this.path.getRedisKey());
+		}	
 	}
 
 	@Override
 	public SeekableByteChannel truncate(long size) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 }

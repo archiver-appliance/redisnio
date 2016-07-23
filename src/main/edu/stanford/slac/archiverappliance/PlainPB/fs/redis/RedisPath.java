@@ -39,9 +39,8 @@ public class RedisPath implements Path {
 	/**
 	 * This is the redis key; so by the time we initialize the path, we should have stripped the scheme and server
 	 */
-	private Path key;
-	
 	private String redisKey;
+	private Path key;	
 	
 	/**
 	 * @param connectionName - This is the string used to identify the redis connection for connecting to this path. 
@@ -193,5 +192,13 @@ public class RedisPath implements Path {
 
 	public String getRedisKey() {
 		return redisKey;
+	}
+
+	public String getConnectionName() {
+		return connectionName;
+	}
+
+	public Path getKey() {
+		return key;
 	}
 }

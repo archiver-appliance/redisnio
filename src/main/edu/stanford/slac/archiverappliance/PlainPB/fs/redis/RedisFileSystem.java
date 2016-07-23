@@ -14,6 +14,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 /**
@@ -99,5 +100,11 @@ public class RedisFileSystem extends FileSystem {
 
 	public String toString() { 
 		return "redis://" + this.connectionName;
+	}
+
+	public void deleteKey(RedisPath redisPath) {
+		try(Jedis jedis = this.jedisPool.getResource()) {
+			jedis.del(redisPath.getRedisKey().getBytes());
+		}		
 	}
 }
