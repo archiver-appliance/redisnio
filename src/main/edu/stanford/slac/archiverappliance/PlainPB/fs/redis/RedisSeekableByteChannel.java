@@ -3,6 +3,9 @@ package edu.stanford.slac.archiverappliance.PlainPB.fs.redis;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
 
 import edu.stanford.slac.archiverappliance.PlainPB.fs.redis.RedisFileSystem;
 import edu.stanford.slac.archiverappliance.PlainPB.fs.redis.RedisPath;
@@ -18,9 +21,12 @@ public class RedisSeekableByteChannel implements SeekableByteChannel {
 	private RedisPath path;
 	private long currentPosition = 0;
 	
-	public RedisSeekableByteChannel(RedisFileSystem theFileSystem, RedisPath path) { 
+	public RedisSeekableByteChannel(RedisFileSystem theFileSystem, RedisPath path, Set<? extends OpenOption> options) throws IOException { 
 		this.fs = theFileSystem;
 		this.path = path;
+		if(options.contains(StandardOpenOption.APPEND)) { 
+			this.currentPosition = this.size();
+		}
 	}
 
 	@Override

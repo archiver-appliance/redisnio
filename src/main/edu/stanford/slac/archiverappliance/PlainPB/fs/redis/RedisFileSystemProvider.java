@@ -12,6 +12,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -106,7 +107,7 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 	public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		RedisPath redisPath = (RedisPath) path;
 		RedisFileSystem fs = createdFileSystems.get(redisPath.getConnectionName());
-		return new RedisSeekableByteChannel(fs, redisPath);
+		return new RedisSeekableByteChannel(fs, redisPath, options);
 	}
 
 	@Override
@@ -135,7 +136,13 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public void move(Path source, Path target, CopyOption... options) throws IOException {
-		throw new UnsupportedOperationException();
+		RedisPath redisSrcPath = (RedisPath) source;
+		RedisPath redisTargetPath = (RedisPath) target;
+		if(!redisSrcPath.getConnectionName().equals(redisTargetPath.getConnectionName())) { 
+			throw new IOException("Cannot move data between different redis instances yet Src: " + redisSrcPath.getConnectionName() + " Dest: " + redisTargetPath.getConnectionName());
+		}
+		RedisFileSystem fs = createdFileSystems.get(redisSrcPath.getConnectionName());
+		fs.rename(redisSrcPath.getRedisKey(), redisTargetPath.getRedisKey());
 	}
 
 	@Override
@@ -155,7 +162,11 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public void checkAccess(Path path, AccessMode... modes) throws IOException {
-		throw new UnsupportedOperationException();
+		RedisPath redisPath = (RedisPath) path;
+		RedisFileSystem fs = createdFileSystems.get(redisPath.getConnectionName());
+		if(!fs.exists(redisPath)) { 
+			throw new NoSuchFileException (redisPath.getRedisKey() + " does not exist on the server");
+		}
 	}
 
 	@Override

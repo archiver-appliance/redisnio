@@ -148,4 +148,21 @@ public class RedisFileSystem extends FileSystem {
 			return paths.iterator();
 		}
 	}
+
+	/**
+	 * Rename the key redisSrcKey to redisTargetKey
+	 * @param redisSrcKey
+	 * @param redisTargetKey
+	 */
+	public void rename(String redisSrcKey, String redisTargetKey) throws IOException {
+		try(Jedis jedis = this.jedisPool.getResource()) {
+			jedis.rename(redisSrcKey, redisTargetKey);
+		}
+	}
+
+	public boolean exists(RedisPath redisPath) throws IOException {
+		try(Jedis jedis = this.jedisPool.getResource()) {
+			return jedis.exists(redisPath.getRedisKey());
+		}
+	}
 }

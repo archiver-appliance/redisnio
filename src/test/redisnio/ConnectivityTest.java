@@ -9,8 +9,10 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -54,6 +56,13 @@ public class ConnectivityTest {
 			Files.deleteIfExists(Paths.get(new URI(redisUrl + t.key)));
 			keysInData.add(Paths.get(new URI(redisUrl + t.key)));
 		}
+		
+		try(DirectoryStream<Path> ds = Files.newDirectoryStream(Paths.get(new URI(redisUrl + "music")))) {
+			for(Path p : ds) {
+				logger.info("Cleaning up leftovers from previous test runs.");
+				Files.delete(p);
+			}
+		}
 
 		
 		for(TestData t : testData) {
@@ -75,6 +84,36 @@ public class ConnectivityTest {
 		for(TestData t : testData) { 
 			Files.delete(Paths.get(new URI(redisUrl + t.key)));
 		}
+		
+		// Test move and append
+		List<String> srcAllLines = new LinkedList<String>(); 
+		srcAllLines.addAll(testData[0].content);
+		srcAllLines.addAll(testData[1].content);
+		{
+			Files.deleteIfExists(Paths.get(new URI(redisUrl + "music/moveSrc")));
+			Files.deleteIfExists(Paths.get(new URI(redisUrl + "music/moveDest")));
+			
+			Files.write(Paths.get(new URI(redisUrl + "music/moveSrc")), testData[0].content);
+			Files.write(Paths.get(new URI(redisUrl + "music/moveSrc")), testData[1].content, StandardOpenOption.APPEND);
+			
+			{ 
+				List<String> allLines = Files.readAllLines(Paths.get(new URI(redisUrl + "music/moveSrc")));
+				assertTrue("Append did not work correctly", allLines.equals(srcAllLines));
+			}
+			
+			Files.move(Paths.get(new URI(redisUrl + "music/moveSrc")), Paths.get(new URI(redisUrl + "music/moveDest")));
+
+			{
+				assertTrue("Move did not create new file", Files.exists(Paths.get(new URI(redisUrl + "music/moveDest"))));
+				assertTrue("Move did not remove old file", !Files.exists(Paths.get(new URI(redisUrl + "music/moveSrc"))));
+				List<String> allLines = Files.readAllLines(Paths.get(new URI(redisUrl + "music/moveDest")));
+				assertTrue("Append did not work correctly", allLines.equals(srcAllLines));
+			}
+
+			Files.deleteIfExists(Paths.get(new URI(redisUrl + "music/moveSrc")));
+			Files.deleteIfExists(Paths.get(new URI(redisUrl + "music/moveDest")));		
+		}
+		
 	}
 
 	private final class TestData {
