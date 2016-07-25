@@ -34,7 +34,10 @@ public class ConnectivityTest {
 
 	@Before
 	public void setUp() throws Exception {
-		redisUrl = System.getenv("ARCHAPPL_PERSISTENCE_LAYER_REDISURL");
+		redisUrl = System.getenv("ARCHAPPL_TEST_REDISURL");
+		if(redisUrl == null) { 
+			redisUrl = "redis://localhost:6379/";
+		}
 		List<FileSystemProvider> providers =  FileSystemProvider.installedProviders();
 		for(FileSystemProvider provider : providers) { 
 			logger.info("Found provider: " + provider.getScheme());
@@ -131,14 +134,7 @@ public class ConnectivityTest {
 				assertTrue("Move did not move content correctly", allLines.equals(srcAllLines));
 			}
 			
-			Files.copy(srcPath, destPath);
-			
-			try(DirectoryStream<Path> ds = Files.newDirectoryStream(Paths.get(new URI(redisUrl + "music")))) {
-				for(Path p : ds) { 
-					System.out.println("*******************************************" + p.toString());
-				}
-			}
-
+			Files.copy(srcPath, destPath);			
 			{
 				assertTrue("Copy did not create new file", Files.exists(destPath));
 				assertTrue("Copy removed old file", Files.exists(srcPath));
