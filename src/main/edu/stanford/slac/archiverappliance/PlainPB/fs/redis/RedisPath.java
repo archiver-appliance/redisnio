@@ -209,4 +209,9 @@ public class RedisPath implements Path {
 	public Path getKey() {
 		return key;
 	}
+
+	@Override
+	public String toString() {
+		return this.connectionName + this.redisKey;
+	}
 }

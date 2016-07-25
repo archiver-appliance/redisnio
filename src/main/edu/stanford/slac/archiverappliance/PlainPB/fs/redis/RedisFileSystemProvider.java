@@ -131,7 +131,13 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public void copy(Path source, Path target, CopyOption... options) throws IOException {
-		throw new UnsupportedOperationException();
+		RedisPath redisSrcPath = (RedisPath) source;
+		RedisPath redisTargetPath = (RedisPath) target;
+		if(!redisSrcPath.getConnectionName().equals(redisTargetPath.getConnectionName())) { 
+			throw new IOException("Cannot move data between different redis instances yet Src: " + redisSrcPath.getConnectionName() + " Dest: " + redisTargetPath.getConnectionName());
+		}
+		RedisFileSystem fs = createdFileSystems.get(redisSrcPath.getConnectionName());
+		fs.copy(redisSrcPath.getRedisKey(), redisTargetPath.getRedisKey(), options);
 	}
 
 	@Override
@@ -142,7 +148,7 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 			throw new IOException("Cannot move data between different redis instances yet Src: " + redisSrcPath.getConnectionName() + " Dest: " + redisTargetPath.getConnectionName());
 		}
 		RedisFileSystem fs = createdFileSystems.get(redisSrcPath.getConnectionName());
-		fs.rename(redisSrcPath.getRedisKey(), redisTargetPath.getRedisKey());
+		fs.rename(redisSrcPath.getRedisKey(), redisTargetPath.getRedisKey(), options);
 	}
 
 	@Override

@@ -90,30 +90,65 @@ public class ConnectivityTest {
 		srcAllLines.addAll(testData[0].content);
 		srcAllLines.addAll(testData[1].content);
 		{
-			Files.deleteIfExists(Paths.get(new URI(redisUrl + "music/moveSrc")));
-			Files.deleteIfExists(Paths.get(new URI(redisUrl + "music/moveDest")));
+			Path srcPath = Paths.get(new URI(redisUrl + "music/moveSrc"));
+			Files.deleteIfExists(srcPath);
+			Path destPath = Paths.get(new URI(redisUrl + "music/moveDest"));
+			Files.deleteIfExists(destPath);
 			
-			Files.write(Paths.get(new URI(redisUrl + "music/moveSrc")), testData[0].content);
-			Files.write(Paths.get(new URI(redisUrl + "music/moveSrc")), testData[1].content, StandardOpenOption.APPEND);
+			Files.write(srcPath, testData[0].content);
+			Files.write(srcPath, testData[1].content, StandardOpenOption.APPEND);
 			
 			{ 
-				List<String> allLines = Files.readAllLines(Paths.get(new URI(redisUrl + "music/moveSrc")));
+				List<String> allLines = Files.readAllLines(srcPath);
 				assertTrue("Append did not work correctly", allLines.equals(srcAllLines));
 			}
 			
-			Files.move(Paths.get(new URI(redisUrl + "music/moveSrc")), Paths.get(new URI(redisUrl + "music/moveDest")));
+			Files.move(srcPath, destPath);
 
 			{
-				assertTrue("Move did not create new file", Files.exists(Paths.get(new URI(redisUrl + "music/moveDest"))));
-				assertTrue("Move did not remove old file", !Files.exists(Paths.get(new URI(redisUrl + "music/moveSrc"))));
-				List<String> allLines = Files.readAllLines(Paths.get(new URI(redisUrl + "music/moveDest")));
+				assertTrue("Move did not create new file", Files.exists(destPath));
+				assertTrue("Move did not remove old file", !Files.exists(srcPath));
+				List<String> allLines = Files.readAllLines(destPath);
 				assertTrue("Append did not work correctly", allLines.equals(srcAllLines));
 			}
 
-			Files.deleteIfExists(Paths.get(new URI(redisUrl + "music/moveSrc")));
-			Files.deleteIfExists(Paths.get(new URI(redisUrl + "music/moveDest")));		
+			Files.deleteIfExists(srcPath);
+			Files.deleteIfExists(destPath);		
 		}
 		
+		// Test copy 
+		{
+			Path srcPath = Paths.get(new URI(redisUrl + "music/copySrc"));
+			Files.deleteIfExists(srcPath);
+			Path destPath = Paths.get(new URI(redisUrl + "music/copyDest"));
+			Files.deleteIfExists(destPath);
+			
+			Files.write(srcPath, testData[0].content);
+			Files.write(srcPath, testData[1].content, StandardOpenOption.APPEND);
+			
+			{ 
+				List<String> allLines = Files.readAllLines(srcPath);
+				assertTrue("Move did not move content correctly", allLines.equals(srcAllLines));
+			}
+			
+			Files.copy(srcPath, destPath);
+			
+			try(DirectoryStream<Path> ds = Files.newDirectoryStream(Paths.get(new URI(redisUrl + "music")))) {
+				for(Path p : ds) { 
+					System.out.println("*******************************************" + p.toString());
+				}
+			}
+
+			{
+				assertTrue("Copy did not create new file", Files.exists(destPath));
+				assertTrue("Copy removed old file", Files.exists(srcPath));
+				List<String> allLines = Files.readAllLines(destPath);
+				assertTrue("Copy did not copy content correctly", allLines.equals(srcAllLines));
+			}
+
+			Files.deleteIfExists(srcPath);
+			Files.deleteIfExists(destPath);		
+		}
 	}
 
 	private final class TestData {

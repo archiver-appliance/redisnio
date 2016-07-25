@@ -1,6 +1,7 @@
 package edu.stanford.slac.archiverappliance.PlainPB.fs.redis;
 
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileStore;
@@ -150,11 +151,26 @@ public class RedisFileSystem extends FileSystem {
 	}
 
 	/**
+	 * Copy the contents of the key redisSrcKey to redisTargetKey
+	 * @param redisSrcKey
+	 * @param redisTargetKey
+	 * @param options - For now, this is largely ignored.
+	 */
+	public void copy(String redisSrcKey, String redisTargetKey, CopyOption... options) throws IOException {
+		try(Jedis jedis = this.jedisPool.getResource()) {
+			// No support for copy in redis; use a LUA script instead.
+			// If this seems to be used often, we can compile this script and use the SHA instead..
+			jedis.eval("redis.call('SET', KEYS[2], redis.call('GET', KEYS[1])); return 1;", 2, redisSrcKey, redisTargetKey);
+		}
+	}
+
+	/**
 	 * Rename the key redisSrcKey to redisTargetKey
 	 * @param redisSrcKey
 	 * @param redisTargetKey
+	 * @param options - For now, this is largely ignored.
 	 */
-	public void rename(String redisSrcKey, String redisTargetKey) throws IOException {
+	public void rename(String redisSrcKey, String redisTargetKey, CopyOption... options) throws IOException {
 		try(Jedis jedis = this.jedisPool.getResource()) {
 			jedis.rename(redisSrcKey, redisTargetKey);
 		}
