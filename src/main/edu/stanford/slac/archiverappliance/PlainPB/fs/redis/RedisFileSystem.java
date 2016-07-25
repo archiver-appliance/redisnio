@@ -15,9 +15,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -30,7 +29,7 @@ import redis.clients.jedis.JedisPool;
  *
  */
 public class RedisFileSystem extends FileSystem {
-	private static final Logger logger = LoggerFactory.getLogger(RedisFileSystem.class);
+	private static final Logger logger = Logger.getLogger(RedisFileSystem.class.getName());
 	private RedisFileSystemProvider theProvider;
 	JedisPool jedisPool = null;
 	private String connectionName;
@@ -50,7 +49,7 @@ public class RedisFileSystem extends FileSystem {
 	public void close() throws IOException {
 		// For now, we don't do anything here..
 		// Should we close the jedis pool?
-		logger.debug("Close called on RedisFileSytem; should we close the connection pool?");
+		logger.info("Close called on RedisFileSytem; should we close the connection pool?");
 	}
 
 	@Override
@@ -124,7 +123,7 @@ public class RedisFileSystem extends FileSystem {
 							matchingPaths.add(mathingRedisPath);
 						}
 					} catch(IOException ex) { 
-						logger.error("Exception from filter when matching " + matchingKey);
+						logger.log(Level.SEVERE, "Exception from filter when matching " + matchingKey, ex);
 					}
 				} else { 
 					matchingPaths.add(mathingRedisPath);

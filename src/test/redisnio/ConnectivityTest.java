@@ -16,12 +16,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test if we can use an environment variable to establish connectivity to redis.
@@ -29,7 +28,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class ConnectivityTest {
-	private static final Logger logger = LoggerFactory.getLogger(ConnectivityTest.class);
+	private static final Logger logger = Logger.getLogger(ConnectivityTest.class.getName());
 	String redisUrl;
 
 	@Before

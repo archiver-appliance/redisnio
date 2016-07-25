@@ -22,9 +22,7 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 
 /**
  * A NIO.2 file system provider meant to be used against a redis backend.
@@ -37,7 +35,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class RedisFileSystemProvider extends FileSystemProvider {
-	private static final Logger logger = LoggerFactory.getLogger(RedisFileSystemProvider.class);
+	private static final Logger logger = Logger.getLogger(RedisFileSystemProvider.class.getName());
 	
 	private ConcurrentHashMap<String, RedisFileSystem> createdFileSystems = new ConcurrentHashMap<String, RedisFileSystem>();
 	
@@ -66,7 +64,7 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 		if(createdFileSystems.containsKey(connectionName)) { 
 			throw new FileSystemAlreadyExistsException("A redis file system that connects to " + connectionName + " was already created");
 		}
-		logger.debug("Creating a new redis file system connecting to " + connectionName);
+		logger.info("Creating a new redis file system connecting to " + connectionName);
 		RedisFileSystem fs = new RedisFileSystem(this, server, port, env);
 		createdFileSystems.put(connectionName, fs);
 		return fs;
