@@ -74,7 +74,10 @@ public class RedisFileSystem extends FileSystem {
 	
 	@Override
 	public Path getPath(String first, String... more) {
-		return new RedisPath(theProvider, this.connectionName, first + String.join("/", more));
+		String fullName = first + String.join("/", more);
+		// If you get keys in redis with the scheme and host etc, the caller of this method is probably to blame...
+		logger.fine("Creating a path for full name " + fullName);
+		return new RedisPath(theProvider, this.connectionName, fullName);
 	}
 
 	@Override
