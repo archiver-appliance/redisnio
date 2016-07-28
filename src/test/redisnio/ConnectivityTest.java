@@ -151,8 +151,7 @@ public class ConnectivityTest {
 		
 		// Make sure everything is clean
 		URI redisURI = new URI(redisUrl);
-		JedisPool jedisPool = new JedisPool(redisURI.getHost(), redisURI.getPort());
-		try(Jedis jedis = jedisPool.getResource()) {
+		try(JedisPool jedisPool = new JedisPool(redisURI.getHost(), redisURI.getPort()); Jedis jedis = jedisPool.getResource()) {
 			assertTrue("Still some keys remaining", jedis.keys("music/*").isEmpty());
 			assertTrue("Still some attributes remaining", jedis.keys("Attrsmusic/*").isEmpty());
 		}		

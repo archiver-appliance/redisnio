@@ -52,9 +52,9 @@ public class RedisFileSystem extends FileSystem {
 
 	@Override
 	public void close() throws IOException {
-		// For now, we don't do anything here..
-		// Should we close the jedis pool?
-		logger.info("Close called on RedisFileSytem; should we close the connection pool?");
+		logger.info("Close called on RedisFileSytem");
+		this.jedisPool.close();
+		this.jedisPool = null;
 	}
 
 	@Override
