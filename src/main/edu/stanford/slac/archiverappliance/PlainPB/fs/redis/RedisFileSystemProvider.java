@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import edu.stanford.slac.archiverappliance.PlainPB.fs.redis.RedisFileSystem.RedisKeyAttributes;
+
 /**
  * A NIO.2 file system provider meant to be used against a redis backend.
  * To connect, use URI's like so - redis://localhost:port/keyPrefix
@@ -117,7 +119,7 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-		throw new UnsupportedOperationException();
+		// No such thing as directories here...
 	}
 
 	@Override
@@ -151,17 +153,21 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public boolean isSameFile(Path path, Path path2) throws IOException {
-		throw new UnsupportedOperationException();
+		RedisPath redisPath1 = (RedisPath) path;
+		RedisPath redisPath2 = (RedisPath) path2;
+		return redisPath1.equals(redisPath2);
 	}
 
 	@Override
 	public boolean isHidden(Path path) throws IOException {
-		throw new UnsupportedOperationException();
+		return false;
 	}
 
 	@Override
 	public FileStore getFileStore(Path path) throws IOException {
-		throw new UnsupportedOperationException();
+		RedisPath redisPath = (RedisPath) path;
+		RedisFileSystem redisFS = (RedisFileSystem) redisPath.getFileSystem();
+		return redisFS.getFileStore();
 	}
 
 	@Override
@@ -178,14 +184,21 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 		throw new UnsupportedOperationException();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
-		throw new UnsupportedOperationException();
+		if(type == BasicFileAttributes.class || type == RedisKeyAttributes.class) { 
+			RedisPath redisPath = (RedisPath) path;
+			RedisFileSystem fs = createdFileSystems.get(redisPath.getConnectionName());
+			return (A) fs.readAttributes(redisPath, options);
+		} else { 
+			return null;
+		}
 	}
 
 	@Override
 	public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
-		throw new UnsupportedOperationException();
+		return null;
 	}
 
 	@Override

@@ -6,9 +6,14 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.FileStoreAttributeView;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Iterator;
@@ -86,6 +91,71 @@ public class RedisFileSystem extends FileSystem {
 	public Iterable<FileStore> getFileStores() {
 		throw new UnsupportedOperationException();
 	}
+	
+	
+	public RedisKeyAttributes readAttributes(RedisPath redisPath, LinkOption[] options) {
+		return new RedisKeyAttributes(this, redisPath);
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public FileStore getFileStore() { 
+		return new FileStore() {
+			@Override
+			public String type() {
+				return "redis";
+			}
+			
+			@Override
+			public boolean supportsFileAttributeView(String name) {
+				return false;
+			}
+			
+			@Override
+			public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
+				return false;
+			}
+			
+			@Override
+			public String name() {
+				return "redis";
+			}
+			
+			@Override
+			public boolean isReadOnly() {
+				return false;
+			}
+			
+			@Override
+			public long getUsableSpace() throws IOException {
+				return 0;
+			}
+			
+			@Override
+			public long getUnallocatedSpace() throws IOException {
+				return 0;
+			}
+			
+			@Override
+			public long getTotalSpace() throws IOException {
+				return 0;
+			}
+			
+			@Override
+			public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			@Override
+			public Object getAttribute(String attribute) throws IOException {
+				// TODO Auto-generated method stub
+				return null;
+			}
+		};
+	}
 
 	@Override
 	public Set<String> supportedFileAttributeViews() {
@@ -108,7 +178,8 @@ public class RedisFileSystem extends FileSystem {
 
 	public void deleteKey(RedisPath redisPath) {
 		try(Jedis jedis = this.jedisPool.getResource()) {
-			jedis.del(redisPath.getRedisKey().getBytes());
+			jedis.del(redisPath.getRedisKey());
+			jedis.del("Attrs" + redisPath.getRedisKey());
 		}		
 	}
 
@@ -179,5 +250,74 @@ public class RedisFileSystem extends FileSystem {
 		try(Jedis jedis = this.jedisPool.getResource()) {
 			return jedis.exists(redisPath.getRedisKey());
 		}
+	}
+	
+	
+	class RedisKeyAttributes implements BasicFileAttributes {
+		boolean keyExists = false;
+		RedisPath redisPath;
+		long size;
+		long lastModifiedTime;
+		long lastAccessedTime;
+		long keyCreationTime;
+		
+		public RedisKeyAttributes(RedisFileSystem fs, RedisPath redisPath) {
+			this.redisPath = redisPath;
+			try(Jedis jedis = fs.jedisPool.getResource()) {
+				if(jedis.exists(redisPath.getRedisKey())) { 
+					keyExists = true;
+					size = jedis.strlen(redisPath.getRedisKey());
+					String attrKey = "Attrs" + redisPath.getRedisKey();
+					if(jedis.hexists(attrKey, "lastModifiedTime")) { lastModifiedTime = Long.parseLong(jedis.hget(attrKey, "lastModifiedTime")); } 
+					if(jedis.hexists(attrKey, "lastAccessedTime")) { lastAccessedTime = Long.parseLong(jedis.hget(attrKey, "lastAccessedTime")); } 
+					if(jedis.hexists(attrKey, "keyCreationTime")) { keyCreationTime = Long.parseLong(jedis.hget(attrKey, "keyCreationTime")); } 
+				}
+			}
+		}
+
+		@Override
+		public FileTime lastModifiedTime() {
+			return FileTime.fromMillis(lastModifiedTime);
+		}
+
+		@Override
+		public FileTime lastAccessTime() {
+			return FileTime.fromMillis(lastAccessedTime);
+		}
+
+		@Override
+		public FileTime creationTime() {
+			return FileTime.fromMillis(keyCreationTime);
+		}
+
+		@Override
+		public boolean isRegularFile() {
+			return keyExists;
+		}
+
+		@Override
+		public boolean isDirectory() {
+			return false;
+		}
+
+		@Override
+		public boolean isSymbolicLink() {
+			return false;
+		}
+
+		@Override
+		public boolean isOther() {
+			return false;
+		}
+
+		@Override
+		public long size() {
+			return size;
+		}
+
+		@Override
+		public Object fileKey() {
+			return redisPath.toString();
+		}		
 	}
 }

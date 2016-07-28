@@ -22,6 +22,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+
 /**
  * Test if we can use an environment variable to establish connectivity to redis.
  * @author mshankar
@@ -36,7 +39,11 @@ public class ConnectivityTest {
 		redisUrl = System.getenv("ARCHAPPL_TEST_REDISURL");
 		if(redisUrl == null) { 
 			redisUrl = "redis://localhost:6379/";
+		} else { 
+			assertTrue("ARCHAPPL_TEST_REDISURL should start with redis://", redisUrl.startsWith("redis://"));
+			assertTrue("ARCHAPPL_TEST_REDISURL should end with /", redisUrl.endsWith("/"));
 		}
+		
 		List<FileSystemProvider> providers =  FileSystemProvider.installedProviders();
 		for(FileSystemProvider provider : providers) { 
 			logger.info("Found provider: " + provider.getScheme());
@@ -49,9 +56,6 @@ public class ConnectivityTest {
 
 	@Test
 	public void testReadWrite() throws IOException, URISyntaxException {
-		assertTrue("Please define the environemnt variable ARCHAPPL_PERSISTENCE_LAYER_REDISURL", redisUrl != null);
-		assertTrue("ARCHAPPL_PERSISTENCE_LAYER_REDISURL should start with redis://", redisUrl.startsWith("redis://"));
-		assertTrue("ARCHAPPL_PERSISTENCE_LAYER_REDISURL should end with /", redisUrl.endsWith("/"));
 		
 		Set<Path> keysInData = new TreeSet<Path>();
 		for(TestData t : testData) { 
@@ -144,6 +148,14 @@ public class ConnectivityTest {
 			Files.deleteIfExists(srcPath);
 			Files.deleteIfExists(destPath);		
 		}
+		
+		// Make sure everything is clean
+		URI redisURI = new URI(redisUrl);
+		JedisPool jedisPool = new JedisPool(redisURI.getHost(), redisURI.getPort());
+		try(Jedis jedis = jedisPool.getResource()) {
+			assertTrue("Still some keys remaining", jedis.keys("music/*").isEmpty());
+			assertTrue("Still some attributes remaining", jedis.keys("Attrsmusic/*").isEmpty());
+		}		
 	}
 
 	private final class TestData {

@@ -47,6 +47,7 @@ public class RedisSeekableByteChannel implements SeekableByteChannel {
 			}
 			dst.put(redisData);
 			currentPosition = currentPosition + redisData.length;
+			jedis.hset("Attrs" + this.path.getRedisKey(), "lastAccessedTime",  Long.toString(System.currentTimeMillis()));
 			return redisData.length;
 		}	
 	}
@@ -58,6 +59,12 @@ public class RedisSeekableByteChannel implements SeekableByteChannel {
 			byte[] buf = new byte[src.remaining()];
 			src.get(buf);
 			currentPosition = jedis.setrange(this.path.getRedisKey().getBytes(), this.currentPosition, buf);
+			String attrKey = "Attrs" + this.path.getRedisKey();
+			String curTimeStr = Long.toString(System.currentTimeMillis());
+			if(!jedis.exists(attrKey)) { 
+				jedis.hset(attrKey, "keyCreationTime",  curTimeStr);
+			}
+			jedis.hset(attrKey, "lastModifiedTime",  curTimeStr);
 			return (int) (currentPosition - previousCurrent);
 		}	
 	}
