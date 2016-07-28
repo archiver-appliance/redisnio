@@ -50,6 +50,7 @@ public class RedisPath implements Path {
 	public RedisPath(RedisFileSystemProvider redisFSProvider, String connectionName, String pathSuffix) {
 		this.redisFSProvider = redisFSProvider;
 		this.connectionName = connectionName;
+		assert(!pathSuffix.contains("redis:"));
 		this.redisKey = pathSuffix;
 		this.key = Paths.get(this.redisKey);
 	}
@@ -76,7 +77,7 @@ public class RedisPath implements Path {
 
 	@Override
 	public Path getParent() {
-		return key.getParent();
+		return new RedisPath(redisFSProvider, connectionName, key.getParent().toString());
 	}
 
 	@Override
@@ -111,7 +112,7 @@ public class RedisPath implements Path {
 	
 	@Override
 	public Path toAbsolutePath() {
-		return key.toAbsolutePath();
+		return new RedisPath(redisFSProvider, connectionName, key.toAbsolutePath().toString());
 	}
 
 	@Override
@@ -151,32 +152,32 @@ public class RedisPath implements Path {
 
 	@Override
 	public Path normalize() {
-		return key.normalize();
+		return new RedisPath(redisFSProvider, connectionName, key.normalize().toString());
 	}
 
 	@Override
 	public Path resolve(Path other) {
-		return key.resolve(other);
+		return new RedisPath(redisFSProvider, connectionName, key.resolve(other).toString());
 	}
 
 	@Override
 	public Path resolve(String other) {
-		return key.resolve(other);
+		return new RedisPath(redisFSProvider, connectionName, key.resolve(other).toString());
 	}
 
 	@Override
 	public Path resolveSibling(Path other) {
-		return key.resolveSibling(other);
+		return new RedisPath(redisFSProvider, connectionName, key.resolveSibling(other).toString());
 	}
 
 	@Override
 	public Path resolveSibling(String other) {
-		return key.resolveSibling(other);
+		return new RedisPath(redisFSProvider, connectionName, key.resolveSibling(other).toString());
 	}
 
 	@Override
 	public Path relativize(Path other) {
-		return key.relativize(other);
+		return new RedisPath(redisFSProvider, connectionName, key.relativize(other).toString());
 	}
 
 	@Override

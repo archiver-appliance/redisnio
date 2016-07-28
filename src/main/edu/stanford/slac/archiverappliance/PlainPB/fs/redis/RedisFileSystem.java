@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -82,7 +83,16 @@ public class RedisFileSystem extends FileSystem {
 
 	@Override
 	public PathMatcher getPathMatcher(String syntaxAndPattern) {
-		throw new UnsupportedOperationException();
+		return new PathMatcher() {
+			Pattern pattern = Pattern.compile(syntaxAndPattern);
+			@Override
+			public boolean matches(Path path) {
+				logger.fine("Matching pattern " + syntaxAndPattern + " against " + path.toString());
+				RedisPath redisPath = (RedisPath) path;
+				String redisKey = redisPath.getRedisKey();
+				return pattern.matcher(redisKey).matches();
+			}
+		};
 	}
 
 	@Override
