@@ -115,7 +115,7 @@ public class RedisFileSystemProvider extends FileSystemProvider {
 	public DirectoryStream<Path> newDirectoryStream(Path dir, Filter<? super Path> filter) throws IOException {
 		RedisPath redisPath = (RedisPath) dir;
 		RedisFileSystem fs = createdFileSystems.get(redisPath.getConnectionName());
-		return fs.getMatchingKeys(redisPath.getRedisKey(), filter);
+		return fs.getMatchingKeys(redisPath, filter);
 	}
 
 	@Override

@@ -84,13 +84,13 @@ public class RedisFileSystem extends FileSystem {
 	@Override
 	public PathMatcher getPathMatcher(String syntaxAndPattern) {
 		return new PathMatcher() {
-			Pattern pattern = Pattern.compile(syntaxAndPattern);
+			String[] parts = syntaxAndPattern.split(":");
+			String syntax = parts[0];
+			Pattern pattern = syntax.equals("regex") ? Pattern.compile(parts[1]) : Pattern.compile(parts[1].replace("\\*", ".*")); 
 			@Override
 			public boolean matches(Path path) {
 				logger.debug("Matching pattern " + syntaxAndPattern + " against " + path.toString());
-				RedisPath redisPath = (RedisPath) path;
-				String redisKey = redisPath.getRedisKey();
-				return pattern.matcher(redisKey).matches();
+				return pattern.matcher(path.toString()).matches();
 			}
 		};
 	}
@@ -196,11 +196,11 @@ public class RedisFileSystem extends FileSystem {
 		}		
 	}
 
-	public DirectoryStream<Path> getMatchingKeys(String redisKey, Filter<? super Path> filter) {
+	public DirectoryStream<Path> getMatchingKeys(RedisPath pathToFolder, Filter<? super Path> filter) {
 		try(Jedis jedis = this.jedisPool.getResource()) {
 			Set<Path> matchingPaths = new TreeSet<Path>();
-			for(String matchingKey :jedis.keys(redisKey + "/*")) { 
-				RedisPath mathingRedisPath = new RedisPath(this.theProvider, this.connectionName, matchingKey);
+			for(String matchingKey : jedis.keys(pathToFolder.getRedisKey() + "/*")) { 
+				RedisPath mathingRedisPath = new RedisPath(this.theProvider, this.connectionName, matchingKey.replace(pathToFolder.getRedisKey() + "/", ""));
 				if(filter != null) {
 					try { 
 						if(filter.accept(mathingRedisPath)) { 
