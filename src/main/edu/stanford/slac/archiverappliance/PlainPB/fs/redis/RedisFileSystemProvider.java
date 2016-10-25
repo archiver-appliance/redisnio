@@ -22,7 +22,8 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
+
+import org.apache.log4j.Logger;
 
 import edu.stanford.slac.archiverappliance.PlainPB.fs.redis.RedisFileSystem.RedisKeyAttributes;
 

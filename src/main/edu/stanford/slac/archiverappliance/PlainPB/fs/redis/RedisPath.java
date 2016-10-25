@@ -13,8 +13,8 @@ import java.nio.file.WatchEvent.Modifier;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.apache.log4j.Logger;
 
 /**
  * When storing data in Redis, we use the chunkKey as the redis key name.
@@ -90,7 +90,7 @@ public class RedisPath implements Path {
 		try {
 			return new URI("redis://" + this.connectionName + "/" + this.key.toString());
 		} catch (URISyntaxException e) {
-			logger.log(Level.SEVERE, "Exception generating URI", e);
+			logger.error("Exception generating URI", e);
 			return null;
 		}
 	}

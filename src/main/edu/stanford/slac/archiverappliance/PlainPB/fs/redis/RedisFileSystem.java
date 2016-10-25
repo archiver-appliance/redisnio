@@ -20,9 +20,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import org.apache.log4j.Logger;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -77,7 +77,7 @@ public class RedisFileSystem extends FileSystem {
 	public Path getPath(String first, String... more) {
 		String fullName = first + String.join("/", more);
 		// If you get keys in redis with the scheme and host etc, the caller of this method is probably to blame...
-		logger.fine("Creating a path for full name " + fullName);
+		logger.debug("Creating a path for full name " + fullName);
 		return new RedisPath(theProvider, this.connectionName, fullName);
 	}
 
@@ -87,7 +87,7 @@ public class RedisFileSystem extends FileSystem {
 			Pattern pattern = Pattern.compile(syntaxAndPattern);
 			@Override
 			public boolean matches(Path path) {
-				logger.fine("Matching pattern " + syntaxAndPattern + " against " + path.toString());
+				logger.debug("Matching pattern " + syntaxAndPattern + " against " + path.toString());
 				RedisPath redisPath = (RedisPath) path;
 				String redisKey = redisPath.getRedisKey();
 				return pattern.matcher(redisKey).matches();
@@ -207,7 +207,7 @@ public class RedisFileSystem extends FileSystem {
 							matchingPaths.add(mathingRedisPath);
 						}
 					} catch(IOException ex) { 
-						logger.log(Level.SEVERE, "Exception from filter when matching " + matchingKey, ex);
+						logger.error("Exception from filter when matching " + matchingKey, ex);
 					}
 				} else { 
 					matchingPaths.add(mathingRedisPath);
