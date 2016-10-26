@@ -159,7 +159,34 @@ public class RedisFileSystem extends FileSystem {
 			
 			@Override
 			public long getUsableSpace() throws IOException {
-				return 0;
+				// We default to the amount of memory allocated to the JVM; yes; this is kludgy; but older versions of Redis do not have maxmemory in the INFO memory 
+				long maxMemory = Runtime.getRuntime().maxMemory();
+				long usedMemory = 0;
+				try(Jedis jedis = jedisPool.getResource()) {
+					String memoryStats = jedis.info("memory");
+					logger.debug(memoryStats);
+					for(String line : memoryStats.split("\n")) { 
+						if(line.contains(":")) { 
+							String[] parts = line.split(":");
+							String name = parts[0];
+							String value = parts[1].trim();
+							if(name.equals("used_memory")) { 
+								usedMemory = Long.parseLong(value);
+							} else if(name.equals("maxmemory")) {
+								long m = Long.parseLong(value);
+								if (m > 1024) {
+									logger.debug("The server seems to have its maxMemory set to " + m);
+									maxMemory = m;
+								}
+							} else if(name.equals("total_system_memory")) {
+								maxMemory = Long.parseLong(value);
+							}
+						}
+					}
+				}
+				long freeMemory = maxMemory - usedMemory;
+				logger.debug("Returning " + freeMemory + " as free memory");
+				return freeMemory;
 			}
 			
 			@Override
