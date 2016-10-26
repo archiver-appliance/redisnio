@@ -196,18 +196,38 @@ public class RedisFileSystem extends FileSystem {
 			
 			@Override
 			public long getTotalSpace() throws IOException {
-				return 0;
+				// We default to the amount of memory allocated to the JVM; yes; this is kludgy; but older versions of Redis do not have maxmemory in the INFO memory 
+				long maxMemory = Runtime.getRuntime().maxMemory();
+				try(Jedis jedis = jedisPool.getResource()) {
+					String memoryStats = jedis.info("memory");
+					logger.debug(memoryStats);
+					for(String line : memoryStats.split("\n")) { 
+						if(line.contains(":")) { 
+							String[] parts = line.split(":");
+							String name = parts[0];
+							String value = parts[1].trim();
+							if(name.equals("maxmemory")) {
+								long m = Long.parseLong(value);
+								if (m > 1024) {
+									logger.debug("The server seems to have its maxMemory set to " + m);
+									maxMemory = m;
+								}
+							} else if(name.equals("total_system_memory")) {
+								maxMemory = Long.parseLong(value);
+							}
+						}
+					}
+				}
+				return maxMemory;
 			}
 			
 			@Override
 			public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type) {
-				// TODO Auto-generated method stub
 				return null;
 			}
 			
 			@Override
 			public Object getAttribute(String attribute) throws IOException {
-				// TODO Auto-generated method stub
 				return null;
 			}
 		};
