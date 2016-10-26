@@ -7,8 +7,8 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Set;
 
-import edu.stanford.slac.archiverappliance.PlainPB.fs.redis.RedisFileSystem;
-import edu.stanford.slac.archiverappliance.PlainPB.fs.redis.RedisPath;
+import org.apache.log4j.Logger;
+
 import redis.clients.jedis.Jedis;
 
 /**
@@ -17,6 +17,7 @@ import redis.clients.jedis.Jedis;
  *
  */
 public class RedisSeekableByteChannel implements SeekableByteChannel {
+	private static final Logger logger = Logger.getLogger(RedisSeekableByteChannel.class.getName());
 	private RedisFileSystem fs;
 	private RedisPath path;
 	private long currentPosition = 0;
@@ -41,7 +42,9 @@ public class RedisSeekableByteChannel implements SeekableByteChannel {
 	@Override
 	public int read(ByteBuffer dst) throws IOException {
 		try(Jedis jedis = this.fs.jedisPool.getResource()) { 
-			byte[] redisData = jedis.getrange(this.path.getRedisKey().getBytes(), this.currentPosition, dst.limit());
+			// GETRANGE takes start and end position and is inclusive on both ends.
+			byte[] redisData = jedis.getrange(this.path.getRedisKey().getBytes(), this.currentPosition, this.currentPosition + dst.limit()-1);
+			logger.debug("Got " + redisData.length + " bytes when asking for data between " + this.currentPosition + " and " + (this.currentPosition + dst.limit()-1));
 			if(redisData.length <= 0) { 
 				return -1;
 			}

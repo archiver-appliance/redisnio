@@ -72,7 +72,7 @@ public class RedisPath implements Path {
 
 	@Override
 	public Path getFileName() {
-		return key;
+		return key.getFileName();
 	}
 
 	@Override
@@ -212,6 +212,6 @@ public class RedisPath implements Path {
 
 	@Override
 	public String toString() {
-		return this.connectionName + this.redisKey;
+		return this.redisKey;
 	}
 }
