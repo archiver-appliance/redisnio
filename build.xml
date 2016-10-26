@@ -35,7 +35,7 @@
         <tstamp>
             <format property="TODAY" pattern="MM/dd/yyyy HH:mm:ss"/>
         </tstamp>
-        <jar compress="true" destfile="jar/aa_redisnio_${version}.jar" index="false">
+        <jar compress="true" destfile="jar/redisnio_${version}.jar" index="false">
             <manifest>
 				<attribute name="Built-By" value="${user.name}" />
 				<attribute name="Version" value="${version}"/>
@@ -59,7 +59,7 @@
 	  	<!--formatter type="xml" usefile="yes" /-->
 	  	<formatter type="plain" usefile="no" />
 	    <classpath>
-	    	<pathelement path="jar/aa_redisnio_${version}.jar"/>
+	    	<pathelement path="jar/redisnio_${version}.jar"/>
 	    	<pathelement path="bin/main"/>
 	    	<pathelement path="bin/test"/>
 	    	<path refid="project.class.path"/>
