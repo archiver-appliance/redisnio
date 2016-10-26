@@ -41,6 +41,8 @@ public class RedisPath implements Path {
 	private String redisKey;
 	private Path key;	
 	
+	private boolean isAbsolute = false;
+	
 	/**
 	 * @param connectionName - This is the string used to identify the redis connection for connecting to this path. 
 	 * @param pathSuffix - This is the key (pathName). 
@@ -48,13 +50,18 @@ public class RedisPath implements Path {
 	 * 
 	 */
 	public RedisPath(RedisFileSystemProvider redisFSProvider, String connectionName, String pathSuffix) {
+		this(redisFSProvider, connectionName, pathSuffix, false);
+	}
+	
+	public RedisPath(RedisFileSystemProvider redisFSProvider, String connectionName, String pathSuffix, boolean isAbsolute) {
 		this.redisFSProvider = redisFSProvider;
 		this.connectionName = connectionName;
 		assert(!pathSuffix.contains("redis:"));
 		this.redisKey = pathSuffix;
 		this.key = Paths.get(this.redisKey);
+		this.isAbsolute = isAbsolute;
 	}
-
+	
 	@Override
 	public FileSystem getFileSystem() {
 		return redisFSProvider.getFileSystem(connectionName);
@@ -62,7 +69,7 @@ public class RedisPath implements Path {
 
 	@Override
 	public boolean isAbsolute() {
-		return key.isAbsolute();
+		return isAbsolute;
 	}
 
 	@Override
@@ -112,7 +119,7 @@ public class RedisPath implements Path {
 	
 	@Override
 	public Path toAbsolutePath() {
-		return new RedisPath(redisFSProvider, connectionName, key.toAbsolutePath().toString());
+		return new RedisPath(redisFSProvider, connectionName, key.toAbsolutePath().toString(), true);
 	}
 
 	@Override
@@ -212,6 +219,10 @@ public class RedisPath implements Path {
 
 	@Override
 	public String toString() {
-		return this.redisKey;
+		if(this.isAbsolute) {
+			return "redis://" + this.connectionName + this.redisKey;
+		} else { 
+			return this.redisKey;
+		}
 	}
 }
